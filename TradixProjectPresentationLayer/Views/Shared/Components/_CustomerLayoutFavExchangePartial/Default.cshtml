@@ -1,0 +1,179 @@
+﻿@{
+    var exchangeRates = ViewBag.ExchangeRates as List<dynamic>;
+    var errorMessage = ViewBag.ErrorMessage as string;
+
+    // Grafik için verileri formatla
+    var labels = string.Join(",", exchangeRates.Select(e => $"'{e.CurrencyCode}'"));
+    var buyingData = string.Join(",", exchangeRates.Select(e => e.ForexBuying));
+    var sellingData = string.Join(",", exchangeRates.Select(e => e.ForexSelling));
+
+    // Altın ve Dolar fiyatları için veri (örnek)
+    var goldData = string.Join(",", exchangeRates.Where(e => e.CurrencyCode == "XAU").Select(e => e.ForexBuying)); // Altın
+    var dollarData = string.Join(",", exchangeRates.Where(e => e.CurrencyCode == "USD").Select(e => e.ForexBuying)); // Dolar
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <div class="row">
+        @if (exchangeRates != null)
+        {
+            foreach (var rate in exchangeRates)
+            {
+                <div class="col-md-4">
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">@rate.CurrencyCode</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">@rate.CurrencyName</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Unit:</strong> @rate.Unit
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Forex Buying:</strong> @rate.ForexBuying
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Forex Selling:</strong> @rate.ForexSelling
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Created Date:</strong> @rate.CreatedDate
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-warning">Veri bulunamadı.</div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Grafik Alanları -->
+<div>
+    <h3 class="text-center mt-5">Döviz Alış/Satış Grafiği</h3>
+    <div class="mt-4">
+        <canvas id="exchangeRateChart" style="max-width: 100%; height: 400px;"></canvas>
+    </div>
+</div>
+
+<!-- Altın ve Dolar Grafik Alanları -->
+<div class="row mt-5">
+    <!-- Altın Artış/Azalış Grafiği -->
+    <div class="col-md-6">
+        <h4 class="text-center">Altın Fiyatı Artış/Azalış</h4>
+        <div class="mt-4">
+            <canvas id="goldChart" style="max-width: 100%; height: 400px;"></canvas>
+        </div>
+    </div>
+
+    <!-- Dolar Artış/Azalış Grafiği -->
+    <div class="col-md-6">
+        <h4 class="text-center">Dolar Fiyatı Artış/Azalış</h4>
+        <div class="mt-4">
+            <canvas id="dollarChart" style="max-width: 100%; height: 400px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Döviz Alış/Satış Grafiği
+    const exchangeRateCtx = document.getElementById('exchangeRateChart').getContext('2d');
+    const exchangeRateChart = new Chart(exchangeRateCtx, {
+        type: 'line',
+        data: {
+            labels: [@Html.Raw(labels)], // Döviz kodları (X ekseni)
+            datasets: [
+                {
+                    label: 'Döviz Alis',
+                    data: [@Html.Raw(buyingData)],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    fill: true
+                },
+                {
+                    label: 'Döviz Satis',
+                    data: [@Html.Raw(sellingData)],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 2,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true, position: 'top' }
+            },
+            scales: {
+                y: { beginAtZero: false }
+            }
+        }
+    });
+
+    // Altın Fiyatı Artış/Azalış Grafiği
+    const goldCtx = document.getElementById('goldChart').getContext('2d');
+    const goldChart = new Chart(goldCtx, {
+        type: 'line',
+        data: {
+            labels: [@Html.Raw(labels)], // Döviz kodları (X ekseni)
+            datasets: [
+                {
+                    label: 'Altın Fiyatı',
+                    data: [@Html.Raw(goldData)], // Altın verisi
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderWidth: 2,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true, position: 'top' }
+            },
+            scales: {
+                y: { beginAtZero: false }
+            }
+        }
+    });
+
+    // Dolar Fiyatı Artış/Azalış Grafiği
+    const dollarCtx = document.getElementById('dollarChart').getContext('2d');
+    const dollarChart = new Chart(dollarCtx, {
+        type: 'line',
+        data: {
+            labels: [@Html.Raw(labels)], // Döviz kodları (X ekseni)
+            datasets: [
+                {
+                    label: 'Dolar Fiyatı',
+                    data: [@Html.Raw(dollarData)], // Dolar verisi
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderWidth: 2,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true, position: 'top' }
+            },
+            scales: {
+                y: { beginAtZero: false }
+            }
+        }
+    });
+</script>
